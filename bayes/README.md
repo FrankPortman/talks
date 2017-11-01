@@ -1,6 +1,6 @@
 # bayes
 
-This is a talk I gave at Uber about Bayes' Theorem + Bayesian Inference (including my world famous package [bayesAB](https://github.com/FrankPortman/bayesAB)).
+This is a talk I gave at Uber about Bayes' Theorem + Bayesian Inference (including my fabulously world famous package [bayesAB](https://github.com/FrankPortman/bayesAB)).
 
 ## How to build
 
