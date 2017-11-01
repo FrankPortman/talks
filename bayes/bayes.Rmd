@@ -1,0 +1,341 @@
+---
+title: "Bayesian Stuff"
+author: "Frank Portman"
+date: "10/11/2017"
+output: 
+    ioslides_presentation:
+        mathjax: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, self.contained = TRUE)
+library(ggplot2)
+```
+
+## Probability
+
+A disease test is advertised as being 99% accurate: if you have the disease, you will text positive 99% of the time, and if you don't have the disease you will test negative 99% of the time. Let's also say 1% of all people have this disease.
+
+If you test positive, what is the probability that you actually have the disease?
+
+## Probability
+ 
+A disease test is advertised as being 99% accurate: if you have the disease, you will text positive 99% of the time, and if you don't have the disease you will test negative 99% of the time. Let's also say 1% of all people have this disease.
+
+If you test positive, what is the probability that you actually have the disease?
+
+<br>
+<br>
+<br>
+
+<center>
+<font color='blue' size=100>50%</font>
+</center>
+
+## Probability
+
+```{r disease1, echo = FALSE}
+p_disease1 <- function(p) {
+  .99 * p / (p * .99 + (1 - p) * .01)
+}
+
+ps <- seq(.01, .75, .01)
+
+qplot(ps, p_disease1(ps), geom = "line") + 
+  theme_minimal() +
+  xlab('Disease Occurence in General Population') +
+  ylab('Probability of Disease Given Test is Positive')
+```
+
+## Probability
+
+```{r disease2, echo = FALSE}
+p_disease2 <- function(p) {
+  p * .01 / (.01 * p + .99 * (1 - p))
+}
+
+ps <- seq(.01, .999, .001)
+
+qplot(ps, p_disease2(ps), geom = "line") + 
+  theme_minimal() +
+  xlab('Test Accuracy') +
+  ylab('Probability of Disease Given Test is Positive')
+```
+
+## Probability
+
+```{r disease3, echo = FALSE}
+p_disease3 <- function(p_general, p_test) {
+  p_test * p_general / (p_general * p_test + (1 - p_general) * (1 - p_test))
+}
+
+p_generals <- seq(.001, .999, .001)
+p_tests <- seq(.001, .999, .001)
+
+grid <- expand.grid(p_generals, p_tests)
+grid$p <- p_disease3(grid$Var1, grid$Var2)
+
+ggplot(grid, aes(x = Var1, y = Var2, z = p)) +
+  stat_summary_2d(binwidth = .005) +
+  scale_fill_distiller(type = 'div', palette = 9, name = 'P(Disease | Test Positive)') +
+  theme_minimal() +
+  theme(legend.position = 'bottom') +
+  xlab('Disease Occurence in General Population') +
+  ylab('Test Accuracy')
+
+```
+
+## Probability
+
+```{r disease4, echo = FALSE, warn = FALSE, message = FALSE, warning = FALSE}
+ggplot(grid, aes(x = Var1, y = Var2, z = p)) +
+  stat_summary_2d(binwidth = .005) +
+  scale_fill_distiller(type = 'div', palette = 9, name = 'P(Disease | Test Positive)') +
+  theme_minimal() +
+  theme(legend.position = 'bottom') +
+  xlab('Disease Occurence in General Population') +
+  ylab('Test Accuracy') +
+  geom_point(aes(x = p_general, y = p_test, z = NA), data = data.frame(p_general = .01, p_test = .99))
+
+```
+
+## Bayes' Theorem
+
+$$ P(A | B) = \frac{P(B | A) * P(A)}{P(B)}$$
+
+Proof: Wikipedia
+
+## Scary Example
+
+The police find the body of someone who was murdered!  They find DNA evidence on the murder weapon.  So they analyze the DNA and compare it to their list of suspects.  They have a huge computer database containing 100,000 people who have previously had run-ins with the law.  They find a match!  Let's say that the DNA test only gives a false positive one out of every million (1,000,000) times.
+
+So the prosecutor hauls the suspect into court.  He stands up in front of the jury.  "There's only a one in a million chance that the test is wrong!" he thunders, "so he's guilty beyond a reasonable doubt; you must convict."
+
+## Scary Example
+
+$$ P(\text{DNA match | innocent}) = 0.000001 $$
+$$ P(\text{innocent | DNA match}) \ne 0.000001 $$
+
+$$ P(\text{innocent | DNA match}) = \frac{P(\text{DNA match | innocent}) * P(\text{innocent})}{P(\text{DNA match})} $$
+
+Let's assume that there's a 50% chance the murderer is in this database. Then
+
+$$ P(\text{innocent}) = 1 - \frac{1}{2} * \frac{1}{100000} = .999995$$.
+
+## Scary Example
+
+Finally
+
+$$ P(\text{innocent | DNA match}) = \frac{.000001 * .999995}{.99 * (1 - .999995) + .01 * (.999995)} $$
+
+$$ P(\text{innocent | DNA match}) = .00009995052 \approx .01\% $$
+
+We got him, folks.
+
+## Scary Example
+
+Or did we?
+
+## Scary Example
+
+Or did we?
+
+Theres a .9999 chance that dude is guilty based on the DNA evidence.
+
+## Scary Example
+
+Or did we?
+
+Theres a .9999 chance that dude is guilty based on the DNA evidence.
+
+Didn't we test all 100,000 people in the database though?
+
+## Scary Example
+
+Or did we?
+
+Theres a .9999 chance that dude is guilty based on the DNA evidence.
+
+Didn't we test all 100,000 people in the database though?
+
+What's the probability of AT LEAST 1 false positive after 100,000 iterations?
+
+## Scary Example
+
+$$ P(\text{no false positives}) = .9999^{100000} $$
+$$ P(\text{at least 1 false positive}) = 1 - .9999^{100000} \approx .999954$$ 
+
+## Scary Example
+
+$$ P(\text{no false positives}) = .9999^{100000} $$
+$$ P(\text{at least 1 false positive}) = 1 - .9999^{100000} \approx .999954$$ 
+
+$$ \text{oops} $$
+
+## Scary Example
+How do we really get P(innocent)? What could affect it?
+
+- Prior knowledge of repeat offenders (i.e. liklihood they'd already be in the DB)
+- Prior knowledge that this suspect was spotted in the area 45 minutes before the murder
+- Prior knowledge of this suspect's relationship with the victim
+- PRIOR KNOWLEDGE
+
+## Bayes' Theorem
+
+Let's break down Bayes' Theorem:
+
+$$ P(A | B) = \frac{P(B | A) * P(A)}{P(B)}$$
+
+- P(A), is the 'prior' or initial belief about the likelihood of A
+- P(A | B), is the 'posterior' or belief in A having accounted for B
+- \(\frac{P(B | A)}{P(B)}\) is the probability of a true 'positive' result scaled by the probability of any positive result
+
+## Spell Check
+
+How do we figure out if a word is misspelled?
+
+## Spell Check
+
+How do we figure out if a word is misspelled?
+
+Let's be Bayesian.
+
+## Spell Check
+
+How do we figure out if a word is misspelled?
+
+Let's be Bayesian.
+
+We want the correction for each word such that 
+
+$$ P(correction | word) $$
+
+is maximized.
+
+## Spell Check
+
+$$ P(c | w) = \frac{P(w | c) \times P(c)}{P(w)} $$
+
+Let's assume P(w) is the same for every possible candidate so we don't need to worry about it (what does this mean?).
+
+So now we are looking for the `c` such that 
+
+$$ P(w | c) \times P(c) $$ 
+
+is maximized.
+
+## Spell Check
+
+P(c) is easy. Let's just use the probability of c occuring in the general english language.
+
+## Spell Check
+
+P(c) is easy. Let's just use the probability of c occuring in the general english language.
+
+What is P(w | c)? How do we come up with the probability that you meant w but instead typed c? 
+
+## Spell Check
+
+P(c) is easy. Let's just use the probability of c occuring in the general english language.
+
+What is P(w | c)? How do we come up with the probability that you meant w but instead typed c? 
+
+We know P(teh | the) is *high* and we know P(ajdfgjadfgdfg | the) is low, but what's our model for judging that? 
+
+## Spell Check
+
+Let's use something trivial that works with our P(w) = constant assumption.
+
+- If the word is known use the original word
+- List of known words at 1 edit distance away or
+- List of known words at 2 edit distance away or
+- All known words
+
+## Spell Check
+
+Why does this suck (but possibly less than you think it sucks)?
+
+## Spell Check
+
+Why does this suck (but possibly less than you think it sucks)?
+
+P(w) is not constant for every w. We also don't consider the context of the words at all.
+
+## Distributions and Random Variables
+
+Let's consider the general problem of inferring the distribution of a parameter \(\theta\) given x (data). If we generalize our earlier definition of Bayes' theorem, the posterior distribution is simply equal to the product of the likelihood function and the prior, normalized by the probability of the data.
+
+$$ p(\theta \mid x) = \frac{p(x\mid\theta) \, p(\theta)} {\int p(x\mid\theta') \, p(\theta') \, d\theta'}. $$
+
+Depending on how complicated your choice of likelihood/priors are, this equation may be very hard to integrate analytically and so you have to use other stuff to sample from the posterior (MCMC).
+
+## Distributions and Random Variables
+
+$$ \text{Posterior Probability} \propto \text{Likelihood} \times \text{Prior Probability} $$
+
+Loose interpretation:
+
+- The prior is a function of your prior beliefs of a parameter(s)'s distribution
+- The likelihood is a function that shows how to update your beliefs given more data
+- Similar to the spell check example, the probability of the data doesn't really matter if all we care about is comparing relative performance of different hypothesis
+    - aka P(x) is constant for all sets of x, given the same priors
+
+## Bernoulli example
+
+Let's consider a process that returns only 1s and 0s, and we want to build a posterior belief on the probability, `p`, of a 1. This is commonly known as a Bernoulli process/random variable. Using the conjugate priors of the Bernoulli distribution:
+
+$$ X \sim Bernoulli(p) $$
+
+**HOWEVER**
+
+$$ p \sim Beta(\alpha, \beta) $$
+
+In other words, if what we care about is the underlying `p` of a Bernoulli distribution, the distribution of THAT `p` is actually a Beta distribution. 
+
+We're normally concerned with estimates about parameters, since random variable probability distributions are simply functors of their parameters.
+
+## Bernoulli example
+
+```{r}
+library(bayesAB)
+plotBeta(1, 1)
+
+```
+
+## Bernoulli example
+
+```{r}
+plotBeta(15, 23)
+
+``` 
+
+## Bernoulli example
+
+```{r, fig.show='animate', interval=0.2, ffmpeg.bitrate='100M'}
+experiment <- rbinom(100, size = 1, p = .3)
+experiment <- cumsum(experiment)
+
+print(plotBeta(1, 1) + ggtitle(NULL) + ylim(0, 10))
+for(i in 1:length(experiment)) {
+  print(plotBeta(experiment[i] + 1, i - experiment[i] + 1) + ggtitle(NULL) + ylim(0, 10))
+}
+
+```
+
+## Bernoulli example
+```{r, fig.show='animate', interval=0.2, ffmpeg.bitrate='100M', echo=FALSE, warning=FALSE, warn=FALSE, message=FALSE}
+library(gridExtra)
+A <- rbinom(1000, size = 1, p = .6)
+B <- rbinom(1000, size = 1, p = .55)
+
+for(i in seq(1, 1000, by = 5)) {
+  test <- bayesTest(A[1:i], B[1:i], priors = c('alpha' = 1, 'beta' = 1), distribution = 'bernoulli')
+  plots <- plot(test, priors = FALSE)
+  grid.arrange(
+    plots$posteriors$Probability + xlim(0, 1) + ggtitle(NULL), 
+    plots$samples$Probability + xlim(-.25, .25) + ylim(0, 1000) + ggtitle(NULL),
+    ncol=2
+  )
+}
+
+ ```
